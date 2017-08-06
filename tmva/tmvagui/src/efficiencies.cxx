@@ -50,7 +50,7 @@ void TMVA::plot_efficiencies(TString dataset, TFile* /*file*/, Int_t type , TDir
    }
    TLegend *legend = new TLegend( x0L, y0H-dyH, x0L+dxL, y0H );
    //legend->SetTextSize( 0.05 );
-   legend->SetHeader( "MVA Method:" );
+   legend->SetHeader( "(Integral) MVA Method" );
    legend->SetMargin( 0.4 );
 
    TString xtit = "Signal efficiency";
@@ -173,7 +173,11 @@ void TMVA::plot_efficiencies(TString dataset, TFile* /*file*/, Int_t type , TDir
          cout << "ERROR - unknown hist \"histWithLargestInt\" --> serious problem in ROOT file" << endl;
          break;
       }
-      legend->AddEntry(histWithLargestInt,TString(histWithLargestInt->GetTitle()).ReplaceAll("MVA_",""),"l");
+
+      TString histtitle   = TString(histWithLargestInt->GetTitle()).ReplaceAll("MVA_","");
+      TString legendtitle = Form("(%3.2f) %s", histWithLargestInt->Integral()/100, histtitle.Data());
+
+      legend->AddEntry(histWithLargestInt, legendtitle, "l");
       hists.Remove(histWithLargestInt);
    }
 
