@@ -1,6 +1,17 @@
 // @(#)root/tmva $Id$
-// Author: Omar Zapata, Thomas James Stevenson.
+// Author: Kim Albertsson
 
+/*************************************************************************
+ * Copyright (C) 2017, Kim Albertsson                                    *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+//////////////////////////////////////////////////////////////////////////////
+///
+//////////////////////////////////////////////////////////////////////////////
 #include "TMVA/CrossEvaluation.h"
 
 #include "TMVA/ClassifierFactory.h"
@@ -25,22 +36,6 @@
 
 #include <iostream>
 #include <memory>
-
-// Generalisations
-//    Dataloader
-//       PrapareForCV( Split s ) <- Split is a generic splitter that fills vectors from incoming vectors 
-//                                  (2 -> 2)
-//                                  With this idea of Split, we can use new Split(new Split()) to do nesting
-//                                  no, i think it better to do PrepareForCV(Split outer, Split inner) since 
-//                                  Hmm, the best would be to have a HyperParam() that does what ever and 
-//                                  returns a model for use in CE.
-//                                  Operating on the model that the current data in the data set is that to 
-//                                  be split and that no-one is allowed to modify it until is done. Yikes, 
-//                                  feels it would be so much neater with the 
-//                                  DSV approach..! (Although there are issues there as well.)
-//                                  
-//       PrapareForSplit(Uint_t iSplit) <- indep (iFold for K-folds, run rumber for bootstrap)
-//       
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Inherit from configurable

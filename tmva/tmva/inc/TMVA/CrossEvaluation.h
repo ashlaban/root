@@ -1,5 +1,17 @@
 // @(#)root/tmva $Id$
-// Author: Kim Albertsson 2017
+// Author: Kim Albertsson
+
+/*************************************************************************
+ * Copyright (C) 2017, Kim Albertsson                                    *
+ * All rights reserved.                                                  *
+ *                                                                       *
+ * For the licensing terms see $ROOTSYS/LICENSE.                         *
+ * For the list of contributors see $ROOTSYS/README/CREDITS.             *
+ *************************************************************************/
+
+//////////////////////////////////////////////////////////////////////////////
+///
+//////////////////////////////////////////////////////////////////////////////
 
 #ifndef ROOT_TMVA_CROSS_EVALUATION
 #define ROOT_TMVA_CROSS_EVALUATION
