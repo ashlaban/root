@@ -4,6 +4,7 @@
 #include "TMVA/HyperParameterOptimisation.h"
 
 #include "TMVA/Configurable.h"
+#include "TMVA/CvSplit.h"
 #include "TMVA/DataSet.h"
 #include "TMVA/Event.h"
 #include "TMVA/MethodBase.h"
@@ -81,9 +82,9 @@ TMVA::HyperParameterOptimisation::~HyperParameterOptimisation()
 
 void TMVA::HyperParameterOptimisation::SetNumFolds(UInt_t i)
 {
-    fNumFolds=i;
-    fDataLoader->MakeKFoldDataSet(fNumFolds);
-    fFoldStatus=kTRUE;
+    fNumFolds = i;
+    // fDataLoader->MakeKFoldDataSet(fNumFolds);
+    fFoldStatus = kFALSE;
 }
 
 void TMVA::HyperParameterOptimisation::Evaluate()
@@ -92,9 +93,10 @@ void TMVA::HyperParameterOptimisation::Evaluate()
     TString methodTitle   = fMethod.GetValue<TString>("MethodTitle");
     TString methodOptions = fMethod.GetValue<TString>("MethodOptions");
 
+    CvSplitBootstrappedStratified split {fNumFolds, 0};
     if(!fFoldStatus)
     {
-        fDataLoader->MakeKFoldDataSet(fNumFolds);
+        fDataLoader->MakeKFoldDataSet(split);
         fFoldStatus=kTRUE;
     }
     fResults.fMethodName = methodName;
@@ -106,7 +108,7 @@ void TMVA::HyperParameterOptimisation::Evaluate()
         foldTitle += i+1;
 
         Event::SetIsTraining(kTRUE);
-        fDataLoader->PrepareFoldDataSet(i, TMVA::Types::kTraining);
+        fDataLoader->PrepareFoldDataSet(split, i, TMVA::Types::kTraining);
 
         auto smethod = fClassifier->BookMethod(fDataLoader.get(), methodName, methodTitle, methodOptions);
 

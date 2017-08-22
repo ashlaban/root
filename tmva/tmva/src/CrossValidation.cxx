@@ -4,6 +4,7 @@
 #include "TMVA/CrossValidation.h"
 
 #include "TMVA/Config.h"
+#include "TMVA/CvSplit.h"
 #include "TMVA/DataSet.h"
 #include "TMVA/Event.h"
 #include "TMVA/MethodBase.h"
@@ -103,9 +104,10 @@ TMVA::CrossValidation::~CrossValidation()
 
 void TMVA::CrossValidation::SetNumFolds(UInt_t i)
 {
-   fNumFolds=i;
-   fDataLoader->MakeKFoldDataSet(fNumFolds);
-   fFoldStatus=kTRUE;
+   fNumFolds = i;
+   fFoldStatus = kFALSE;
+   // fDataLoader->MakeKFoldDataSet(fNumFolds);
+   // fFoldStatus=kTRUE;
 }
 
 void TMVA::CrossValidation::Evaluate()
@@ -121,8 +123,9 @@ void TMVA::CrossValidation::Evaluate()
    TMVA::gConfig().SetSilent(kTRUE);
 
    // Generate K folds on given dataset
+   CvSplitBootstrappedStratified split {fNumFolds, 0};
    if(!fFoldStatus){
-       fDataLoader->MakeKFoldDataSet(fNumFolds);
+       fDataLoader->MakeKFoldDataSet(split);
        fFoldStatus=kTRUE;
    }
 
@@ -134,7 +137,7 @@ void TMVA::CrossValidation::Evaluate()
       foldTitle += "_fold";
       foldTitle += i+1;
 
-      fDataLoader->PrepareFoldDataSet(i, TMVA::Types::kTesting);
+      fDataLoader->PrepareFoldDataSet(split, i, TMVA::Types::kTesting);
       MethodBase* smethod = fClassifier->BookMethod(fDataLoader.get(), methodName, methodTitle, methodOptions);
 
       // Train method
