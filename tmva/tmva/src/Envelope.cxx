@@ -29,13 +29,13 @@ using namespace TMVA;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Envelope::Envelope(const TString &name,DataLoader *dalaloader,TFile *file,const TString options)
-:  Configurable(options),
-   fDataLoader(dalaloader),
-   fFile(file),
-   fVerbose(kFALSE)
+Envelope::Envelope(const TString &name, DataLoader *dataloader, TFile *file, const TString options)
+   : Configurable(options), fDataLoader(dataloader), fFile(file), fVerbose(kFALSE)
 {
-    SetName(name.Data());
+   DeclareOptionRef(fModelPersistence, "ModelPersistence",
+                    "Option to save the trained model in xml file or using serialization");
+
+   SetName(name.Data());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,8 +74,9 @@ DataLoader *Envelope::GetDataLoader(){    return fDataLoader.get();}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Envelope::SetDataLoader(DataLoader *dalaloader){
-        fDataLoader=std::shared_ptr<DataLoader>(dalaloader) ;
+void Envelope::SetDataLoader(DataLoader *dataloader)
+{
+   fDataLoader = std::shared_ptr<DataLoader>(dataloader);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
