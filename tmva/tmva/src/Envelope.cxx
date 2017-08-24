@@ -29,10 +29,13 @@ using namespace TMVA;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Envelope::Envelope(const TString &name,DataLoader *dalaloader,TFile *file,const TString options):Configurable(options),fDataLoader(dalaloader),fFile(file),fVerbose(kFALSE)
+Envelope::Envelope(const TString &name,DataLoader *dalaloader,TFile *file,const TString options)
+:  Configurable(options),
+   fDataLoader(dalaloader),
+   fFile(file),
+   fVerbose(kFALSE)
 {
     SetName(name.Data());
-    fModelPersistence = kTRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
