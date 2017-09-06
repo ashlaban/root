@@ -17,6 +17,6 @@ ROOT_ADD_GTEST(testCrossEvaluationSplitting TestCrossEvaluationSplitting.cxx LIB
 # For non-google tests
 set(Libraries Core MathCore TMVA)
 
-ROOT_EXECUTABLE(testCrossEvaluationSerialise testCrossEvaluationSerialise.cxx
+ROOT_EXECUTABLE(testCrossEvaluationSerialise TestCrossEvaluationSerialise.cxx
     LIBRARIES ${Libraries})
 ROOT_ADD_TEST(TMVA-CrossEvaluation-Serialise COMMAND testCrossEvaluationSerialise)
