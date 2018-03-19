@@ -690,6 +690,11 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
                                         EventVectorOfClassesOfTreeType& eventsmap,
                                         EvtStatsPerClass& eventCounts)
 {
+   if (dataInput.GetInputType() == Types::kDataFrame) {
+      BuildEventVectorDataFrame(dsi, dataInput, eventsmap, eventCounts);
+      return;
+   }
+
    const UInt_t nclasses = dsi.GetNClasses();
 
    eventsmap[ Types::kTraining ]    = EventVectorOfClasses(nclasses);
@@ -975,6 +980,61 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
 
    delete[] varIsArray;
 
+}
+
+void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMVA::DataInputHandler &dataInput,
+                                                     EventVectorOfClassesOfTreeType &eventsmap,
+                                                     EvtStatsPerClass &eventCounts)
+{
+   if (dataInput.GetInputType() != Types::kDataFrame) {
+      Log() << kFATAL << "BuildEventVectorDataFrame can only handle"
+            << " DataInputHandler wrapping a TDataFrame." << Endl;
+   }
+
+   UInt_t nvars = dsi.GetNVariables();
+   UInt_t ntgts = dsi.GetNTargets();
+   UInt_t nspec = dsi.GetNSpectators();
+
+   UInt_t nclasses = dsi.GetNClasses();
+
+   eventsmap[Types::kTraining] = EventVectorOfClasses(nclasses);
+   eventsmap[Types::kTesting] = EventVectorOfClasses(nclasses);
+   eventsmap[Types::kMaxTreeType] = EventVectorOfClasses(nclasses);
+
+   std::vector<Float_t> vars{};
+   std::vector<Float_t> tgts{};
+   std::vector<Float_t> spec{};
+
+   vars.resize(nvars);
+   tgts.resize(ntgts);
+   spec.resize(nspec);
+
+   Double_t weight = 1.0;
+
+   for (size_t iClass = 0; iClass < nclasses; ++iClass) {
+
+      Types::ETreeType currentTreeType = Types::kTraining;
+
+      EventStats &classEventCounts = eventCounts[iClass];
+      EventVector &event_v = eventsmap[currentTreeType].at(iClass);
+
+      for (size_t iEvent = 0; iEvent < dataInput.GetEntries(); ++iEvent) {
+
+         // TODO: Actually move the values
+
+         for (auto &&elem : vars) {
+            elem = 0;
+         }
+         for (auto &&elem : tgts) {
+            elem = 0;
+         }
+         for (auto &&elem : spec) {
+            elem = 0;
+         }
+
+         event_v.push_back(new Event(vars, tgts, spec, iClass, weight));
+      }
+   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

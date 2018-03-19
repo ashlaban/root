@@ -51,7 +51,7 @@ Class that contains all the data information.
 /// constructor
 
 TMVA::DataInputHandler::DataInputHandler()
-   : fLogger( new MsgLogger("DataInputHandler", kINFO) )
+   : fLogger(new MsgLogger("DataInputHandler", kINFO)), fInputType(Types::kMaxDataInput)
 {
    fExplicitTrainTest["Signal"] = fExplicitTrainTest["Background"] = kFALSE;
 }
@@ -87,6 +87,13 @@ void TMVA::DataInputHandler::AddTree( TTree* tree,
                                       const TCut& cut,
                                       Types::ETreeType tt )
 {
+   if (fInputType != Types::kTTree and fInputType != Types::kMaxDataInput) {
+      Log() << kFATAL << "Currently TDataFrame inputs and TTree/CSV inputs"
+            << " cannot be mixed." << Endl;
+   }
+
+   fInputType = Types::kTTree;
+
    if (!tree) Log() << kFATAL << "Zero pointer for tree of class " << className.Data() << Endl;
    if (tree->GetEntries()==0) Log() << kFATAL << "Encountered empty TTree or TChain of class " << className.Data() << Endl;
    if (fInputTrees[className.Data()].empty()) {
@@ -177,6 +184,20 @@ void TMVA::DataInputHandler::AddInputTrees(TTree* inputTree, const TCut& SigCut,
    AddTree( inputTree, "Background", 1.0, BgCut  );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+void TMVA::DataInputHandler::AddDataFrame(TDataFrame &df, const TString &className, Double_t weight, const TCut &cut,
+                                          Types::ETreeType tt)
+{
+   if (fInputType != Types::kDataFrame and fInputType != Types::kMaxDataInput) {
+      Log() << kFATAL << "Currently TDataFrame inputs and TTree/CSV inputs"
+            << " cannot be mixed." << Endl;
+   }
+
+   fInputType = Types::kDataFrame;
+
+   fInputDataFrames[className.Data()].push_back(&df);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -194,11 +215,22 @@ void TMVA::DataInputHandler::ClearTreeList( const TString& className )
 
 std::vector< TString >* TMVA::DataInputHandler::GetClassList() const
 {
-   std::vector< TString >* ret = new std::vector< TString >();
-   for ( std::map< TString, std::vector<TreeInfo> >::iterator it = fInputTrees.begin(); it != fInputTrees.end(); ++it ){
-      ret->push_back( it->first );
+   if (fInputType == Types::kDataFrame) {
+      std::vector<TString> *classNames = new std::vector<TString>();
+      for (auto &&entry : fInputDataFrames) {
+         classNames->push_back(entry.first);
+      }
+      return classNames;
+   } else if (fInputType == Types::kTTree) {
+      std::vector<TString> *ret = new std::vector<TString>();
+      for (std::map<TString, std::vector<TreeInfo>>::iterator it = fInputTrees.begin(); it != fInputTrees.end(); ++it) {
+         ret->push_back(it->first);
+      }
+      return ret;
+   } else {
+      Log() << kFATAL << "Invalid state of DataInputHandler. Input must be"
+            << " dataframe or ttree." << Endl;
    }
-   return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -217,9 +249,23 @@ UInt_t TMVA::DataInputHandler::GetEntries(const std::vector<TreeInfo>& tiV) cons
 
 UInt_t TMVA::DataInputHandler::GetEntries() const
 {
-   UInt_t number = 0;
-   for (std::map< TString, std::vector<TreeInfo> >::iterator it = fInputTrees.begin(); it != fInputTrees.end(); ++it) {
-      number += GetEntries( it->second );
+   if (fInputType == Types::kDataFrame) {
+      ULong64_t n = 0;
+      // fInputDataFrames is map TString -> TDataFrame
+      for (auto &&entry : fInputDataFrames) {
+         for (auto &&df : entry.second) {
+            n += *(df->Count());
+         }
+      }
+      return (UInt_t)n;
+   } else if (fInputType == Types::kTTree) {
+      UInt_t number = 0;
+      for (std::map<TString, std::vector<TreeInfo>>::iterator it = fInputTrees.begin(); it != fInputTrees.end(); ++it) {
+         number += GetEntries(it->second);
+      }
+      return number;
+   } else {
+      Log() << kFATAL << "Invalid state of DataInputHandler. Input must be"
+            << " dataframe or ttree." << Endl;
    }
-   return number;
 }

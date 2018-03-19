@@ -334,6 +334,12 @@ void TMVA::DataLoader::SetInputTreesFromEventAssignTrees()
    }
 }
 
+void TMVA::DataLoader::AddDataFrame(TDataFrame &df, const TString &className, Double_t weight, const TCut &cut,
+                                    Types::ETreeType tt)
+{
+   DataInput().AddDataFrame(df, className, weight, cut, tt);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /// number of signal events (used to compute significance)
 

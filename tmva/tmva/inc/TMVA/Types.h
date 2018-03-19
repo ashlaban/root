@@ -148,6 +148,12 @@ namespace TMVA {
          kTrainingOriginal     // ever needed 
       };
 
+      enum EDataInputType {
+         kTTree = 0,
+         kDataFrame,
+         kMaxDataInput
+      };
+
       enum EBoostStage {
          kBoostProcBegin=0,
          kBeforeTraining,

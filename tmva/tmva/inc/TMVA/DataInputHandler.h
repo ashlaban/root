@@ -41,10 +41,14 @@
 #include <string>
 #include <fstream>
 
+#include "ROOT/TDataFrame.hxx"
+
 #include "TTree.h"
 #include "TCut.h"
 
 #include "TMVA/Types.h"
+
+using namespace ROOT::Experimental;
 
 namespace TMVA {
 
@@ -95,6 +99,9 @@ namespace TMVA {
       void     AddTree          ( const TString& tr, const TString& className, Double_t weight=1.0, 
                                   const TCut& cut = "", Types::ETreeType tt = Types::kMaxTreeType );
 
+      void AddDataFrame(TDataFrame &df, const TString &className, Double_t weight = 1.0, const TCut &cut = "",
+                        Types::ETreeType tt = Types::kMaxTreeType);
+
       // accessors
       std::vector< TString >* GetClassList() const;
 
@@ -108,6 +115,8 @@ namespace TMVA {
       UInt_t           GetEntries()                const;
       const TreeInfo&  SignalTreeInfo(Int_t i)     const { return fInputTrees["Signal"][i]; }
       const TreeInfo&  BackgroundTreeInfo(Int_t i) const { return fInputTrees["Background"][i]; }
+
+      Types::EDataInputType GetInputType() const { return fInputType; }
 
       std::vector<TreeInfo>::const_iterator begin( const TString& className ) const { return fInputTrees[className].begin(); }
       std::vector<TreeInfo>::const_iterator end( const TString& className )   const { return fInputTrees[className].end(); }
@@ -127,10 +136,13 @@ namespace TMVA {
 
       TTree * ReadInputTree( const TString& dataFile );
       
+      mutable std::map< TString, std::vector<TDataFrame *> > fInputDataFrames; // 
       mutable std::map< TString, std::vector<TreeInfo> > fInputTrees;        // list of input trees per class (classname is given as first parameter in the map)
+      Types::EDataInputType                              fInputType;         // Data source type. Determines how to build event vector.
       std::map< std::string, Bool_t   >                  fExplicitTrainTest; // if set to true the user has specified training and testing data explicitly
       mutable MsgLogger*                                 fLogger;            //! message logger
       MsgLogger& Log() const { return *fLogger; }
+
    protected:
        ClassDef(DataInputHandler,1);
    };

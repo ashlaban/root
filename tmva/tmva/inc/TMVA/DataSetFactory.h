@@ -40,6 +40,8 @@
 #include <vector>
 #include <stdlib.h>
 
+#include "ROOT/TDataFrame.hxx"
+
 #include "TString.h"
 #include "TTree.h"
 #include "TCut.h"
@@ -51,6 +53,8 @@
 #include "TMVA/Types.h"
 #include "TMVA/VariableInfo.h"
 #include "TMVA/Event.h"
+
+using namespace ROOT::Experimental;
 
 namespace TMVA {
 
@@ -230,6 +234,9 @@ namespace TMVA {
                                    DataInputHandler& dataInput,
                                    EventVectorOfClassesOfTreeType& eventsmap,
                                    EvtStatsPerClass& eventCounts);
+
+      void BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMVA::DataInputHandler &dataInput,
+                                     EventVectorOfClassesOfTreeType &eventsmap, EvtStatsPerClass &eventCounts);
 
       DataSet*  MixEvents        ( DataSetInfo& dsi,
                                    EventVectorOfClassesOfTreeType& eventsmap,
