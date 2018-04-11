@@ -991,6 +991,12 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
             << " DataInputHandler wrapping a TDataFrame." << Endl;
    }
 
+   // TODO: Support cut expressions. Then we can take the same df several times and 
+   // TODO: Support custom weight expression.
+   // TODO: Also build test set
+   // 
+   // TODO: [FUTURE] Add verification step that all labels are in TDF's
+
    UInt_t nvars = dsi.GetNVariables();
    UInt_t ntgts = dsi.GetNTargets();
    UInt_t nspec = dsi.GetNSpectators();
@@ -1013,23 +1019,56 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
 
    for (size_t iClass = 0; iClass < nclasses; ++iClass) {
 
+      std::string className = dsi.GetClassInfo(iClass)->GetName();
+
       Types::ETreeType currentTreeType = Types::kTraining;
 
       EventStats &classEventCounts = eventCounts[iClass];
       EventVector &event_v = eventsmap[currentTreeType].at(iClass);
 
-      for (size_t iEvent = 0; iEvent < dataInput.GetEntries(); ++iEvent) {
+      // TODO: Support more than 1 dataframe
+      auto df = dataInput.fInputDataFrames[className][0];
 
-         // TODO: Actually move the values
+      std::cout << "Test:" << std::endl;
+      // std::cout << dsi.GetVariableInfo(0) << std::endl;
+      std::cout << dsi.GetVariableInfo(0).GetLabel() << std::endl;
 
-         for (auto &&elem : vars) {
-            elem = 0;
+      // TODO: `dataInput.GetEntries()` might not behave as I expect.
+      for (size_t iEvent = 0; iEvent < *(df->Count()); ++iEvent) {
+
+         std::cout << "Processing event: " << iEvent << std::endl;
+
+         // TODO: There are better implementations of this.
+         //    This e.g. does not correctly handle this case:
+         //    ```
+         //    ROOT::Experimental::TDataFrame d(10);
+         //    int i(0);
+         //    auto df = d.Define("b", [&i](){return i;});
+         //    df.Range(0, 1).Take<int>("b"); // output is 0
+         //    df.Range(0, 1).Take<int>("b"); // output is 1
+         //    ```
+         for (size_t i = 0; i < nvars; ++i) {
+            std::string variableName = dsi.GetVariableInfo(i).GetLabel().Data();
+            // std::cout << "Processing variable: " << variableName << std::endl;
+            auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(variableName);
+            auto value = (*wrapper)[0];
+            vars[i] = value;
          }
-         for (auto &&elem : tgts) {
-            elem = 0;
+
+         for (size_t i = 0; i < ntgts; ++i) {
+            std::string targetName = dsi.GetTargetInfo(i).GetLabel().Data();
+            // std::cout << "Processing target: " << targetName << std::endl;
+            auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(targetName);
+            auto value = (*wrapper)[0];
+            tgts[i] = value;
          }
-         for (auto &&elem : spec) {
-            elem = 0;
+
+         for (size_t i = 0; i < nspec; ++i) {
+            std::string spectatorName = dsi.GetSpectatorInfo(i).GetLabel().Data();
+            // std::cout << "Processing spectator: " << spectatorName << std::endl;
+            auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(spectatorName);
+            auto value = (*wrapper)[0];
+            spec[i] = value;
          }
 
          event_v.push_back(new Event(vars, tgts, spec, iClass, weight));

@@ -82,6 +82,9 @@ namespace TMVA {
 
    class DataInputHandler :public TObject {
 
+   // TODO: Remove this.
+   friend class DataSetFactory;
+
    public:
 
       DataInputHandler();
