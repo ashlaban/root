@@ -49,6 +49,7 @@ Class that contains all the data information
 
 #include "TEventList.h"
 #include "TFile.h"
+#include "TInterpreter.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TProfile.h"
@@ -1021,58 +1022,109 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
 
       std::string className = dsi.GetClassInfo(iClass)->GetName();
 
-      Types::ETreeType currentTreeType = Types::kTraining;
+      // TODO: Each input dataframe needs to be mapped to a tree type.
+      // For input trees, this is done in the Tree info
+      Types::ETreeType currentTreeType = Types::kMaxTreeType;
 
       EventStats &classEventCounts = eventCounts[iClass];
       EventVector &event_v = eventsmap[currentTreeType].at(iClass);
 
-      // TODO: Support more than 1 dataframe
+      // TODO: Support more than 1 dataframe per class
       auto df = dataInput.fInputDataFrames[className][0];
 
-      std::cout << "Test:" << std::endl;
-      // std::cout << dsi.GetVariableInfo(0) << std::endl;
-      std::cout << dsi.GetVariableInfo(0).GetLabel() << std::endl;
-
+      // NOTE: Between begin and end is a simple but slow implementation
+      //    Even further down is a more complex but hopefully more performant impl.
+      // === BEGIN ===
       // TODO: `dataInput.GetEntries()` might not behave as I expect.
-      for (size_t iEvent = 0; iEvent < *(df->Count()); ++iEvent) {
+      // for (size_t iEvent = 0; iEvent < *(df->Count()); ++iEvent) {
 
-         std::cout << "Processing event: " << iEvent << std::endl;
+      //    // std::cout << "Processing event: " << iEvent << std::endl;
 
-         // TODO: There are better implementations of this.
-         //    This e.g. does not correctly handle this case:
-         //    ```
-         //    ROOT::Experimental::TDataFrame d(10);
-         //    int i(0);
-         //    auto df = d.Define("b", [&i](){return i;});
-         //    df.Range(0, 1).Take<int>("b"); // output is 0
-         //    df.Range(0, 1).Take<int>("b"); // output is 1
-         //    ```
-         for (size_t i = 0; i < nvars; ++i) {
-            std::string variableName = dsi.GetVariableInfo(i).GetLabel().Data();
-            // std::cout << "Processing variable: " << variableName << std::endl;
-            auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(variableName);
-            auto value = (*wrapper)[0];
-            vars[i] = value;
+      //    // TODO: There are better implementations of this.
+      //    //    This e.g. does not correctly handle this case:
+      //    //    ```
+      //    //    ROOT::Experimental::TDataFrame d(10);
+      //    //    int i(0);
+      //    //    auto df = d.Define("b", [&i](){return i;});
+      //    //    df.Range(0, 1).Take<int>("b"); // output is 0
+      //    //    df.Range(0, 1).Take<int>("b"); // output is 1
+      //    //    ```
+      //    for (size_t i = 0; i < nvars; ++i) {
+      //       std::string variableName = dsi.GetVariableInfo(i).GetLabel().Data();
+      //       // std::cout << "Processing variable: " << variableName << std::endl;
+      //       auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(variableName);
+      //       auto value = (*wrapper)[0];
+      //       vars[i] = value;
+      //    }
+
+      //    for (size_t i = 0; i < ntgts; ++i) {
+      //       std::string targetName = dsi.GetTargetInfo(i).GetLabel().Data();
+      //       // std::cout << "Processing target: " << targetName << std::endl;
+      //       auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(targetName);
+      //       auto value = (*wrapper)[0];
+      //       tgts[i] = value;
+      //    }
+
+      //    for (size_t i = 0; i < nspec; ++i) {
+      //       std::string spectatorName = dsi.GetSpectatorInfo(i).GetLabel().Data();
+      //       // std::cout << "Processing spectator: " << spectatorName << std::endl;
+      //       auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(spectatorName);
+      //       auto value = (*wrapper)[0];
+      //       spec[i] = value;
+      //    }
+
+      //    event_v.push_back(new Event(vars, tgts, spec, iClass, weight));
+      // }
+      // === END ===
+
+      std::string parameter_type = "";
+      for (size_t i = 0; i<nvars+ntgts+nspec; ++i) {
+         parameter_type += "Float_t";
+         if (i != nvars + ntgts + nspec - 1) {
+            parameter_type += ", ";
          }
-
-         for (size_t i = 0; i < ntgts; ++i) {
-            std::string targetName = dsi.GetTargetInfo(i).GetLabel().Data();
-            // std::cout << "Processing target: " << targetName << std::endl;
-            auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(targetName);
-            auto value = (*wrapper)[0];
-            tgts[i] = value;
-         }
-
-         for (size_t i = 0; i < nspec; ++i) {
-            std::string spectatorName = dsi.GetSpectatorInfo(i).GetLabel().Data();
-            // std::cout << "Processing spectator: " << spectatorName << std::endl;
-            auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(spectatorName);
-            auto value = (*wrapper)[0];
-            spec[i] = value;
-         }
-
-         event_v.push_back(new Event(vars, tgts, spec, iClass, weight));
       }
+
+      std::vector<std::string> column_names{};
+      for (size_t i = 0; i < nvars; ++i) {
+         std::string variableName = dsi.GetVariableInfo(i).GetLabel().Data();
+         column_names.push_back(variableName);
+      }
+
+      for (size_t i = 0; i < ntgts; ++i) {
+         std::string targetName = dsi.GetTargetInfo(i).GetLabel().Data();
+         column_names.push_back(targetName);
+      }
+
+      for (size_t i = 0; i < nspec; ++i) {
+         std::string spectatorName = dsi.GetSpectatorInfo(i).GetLabel().Data();
+         column_names.push_back(spectatorName);
+      }
+
+      // TODO: Convert the lambda to a function generator taking an argument
+      //    This way we can generate the function one and reuse it for all df's.
+      //    Benchmarking with Instruments on mac suggests that speed is comparable to
+      //    non-tdf _IF_ one excludes jitting. (800 tree vs 900 tdf both in millisecs).
+      // std::string _df = Form("((ROOT::Experimental::TDataFrame *)0x%lx)", ULong_t(df)); // NOTE! `df` is already a pointer!
+      // std::string _event_v = Form("((std::vector<TMVA::Event *> *)0x%lx)", ULong_t(&event_v));
+      // std::string _col_names = Form("((std::vector<std::string> *)0x%lx)", ULong_t(&column_names));
+
+      // std::string cmd = _df + "->Foreach([](Float_t x1, Float_t x2) {\n"
+      //                   "  std::vector<TMVA::Event *> & evts = *" + _event_v + ";\n"
+      //                   "  evts.push_back(new TMVA::Event({x1, x2}, {}, {},"+std::to_string(iClass)+", "+std::to_string(weight)+"));\n"
+      //                   "}, *"+_col_names+")";
+
+      // std::cout << "Executing: " << cmd << std::endl;
+      // gInterpreter->ProcessLine(cmd.c_str());
+      // std::cout << "Done Executing" << std::endl;
+
+      // Test of the above, but without jitting.
+      // Using instruments on mac this is of comparable speed as to the TTree version.
+      // ~800 ms for both, more testing required.
+      df->Foreach([=, &event_v](Float_t x1, Float_t x2){
+         event_v.push_back(new TMVA::Event({x1, x2}, {}, {}, iClass, weight));
+      }, column_names);
+
    }
 }
 
