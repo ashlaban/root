@@ -1024,16 +1024,14 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
 
       std::string className = dsi.GetClassInfo(iClass)->GetName();
 
-      // TODO: Each input dataframe needs to be mapped to a tree type.
-      // For input trees, this is done in the Tree info
-      Types::ETreeType currentTreeType = Types::kMaxTreeType;
-
-      EventStats &classEventCounts = eventCounts[iClass];
-      EventVector &event_v = eventsmap[currentTreeType].at(iClass);
-
       // TODO: Support more than 1 dataframe per class
       auto dfInfo = dataInput.fInputDataFrames[className][0];
       auto df = dfInfo.GetDataFrame();
+
+      Types::ETreeType currentTreeType = dfInfo.GetTreeType();
+
+      EventStats &classEventCounts = eventCounts[iClass];
+      EventVector &event_v = eventsmap[currentTreeType].at(iClass);
 
       auto getColumnNames = [](DataSetInfo & dsi, size_t nvars, size_t ntgts, size_t nspec) {
          std::vector<std::string> column_names{};
@@ -1098,7 +1096,7 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
                         "  {" + list_tgt + "}, "
                         "  {" + list_spec + "}, "
                         + std::to_string(iClass) + ", "
-                        + std::to_string(weight) + "));\n"
+                        + std::to_string(weight) + ", 1.0));\n"
                         "}, *" + _col_names + ")";
 
       std::cout << "Executing: " << cmd << std::endl;
@@ -1117,12 +1115,6 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
       // df->Foreach([=, &event_v](Float_t x1, Float_t x2){
       //    event_v.push_back(new TMVA::Event({x1, x2}, {}, {}, iClass, weight));
       // }, column_names);
-
-      std::cout << "EventVector: [";
-      for (auto && event : event_v) {
-         std::cout << event->GetValue(0) << ", ";
-      }
-      std::cout << "]" << std::endl;
    }
 
 }
