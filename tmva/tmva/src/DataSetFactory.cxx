@@ -44,6 +44,8 @@ Class that contains all the data information
 #include <functional>
 #include <numeric>
 #include <random>
+#include <sstream>
+#include <string>
 
 #include "TMVA/DataSetFactory.h"
 
@@ -1077,11 +1079,14 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
       // }
       // === END ===
 
-      std::string parameter_type = "";
-      for (size_t i = 0; i<nvars+ntgts+nspec; ++i) {
-         parameter_type += "Float_t";
-         if (i != nvars + ntgts + nspec - 1) {
-            parameter_type += ", ";
+      std::stringstream parameter_var{""};
+      std::stringstream list_var{""};
+      for (size_t i = 0; i < nvars; ++i) {
+         parameter_var << "Float_t var" << i;
+         list_var << "var" << i;
+         if (i != nvars - 1) {
+            parameter_var << ", ";
+            list_var << ", ";
          }
       }
 
@@ -1091,39 +1096,44 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
          column_names.push_back(variableName);
       }
 
-      for (size_t i = 0; i < ntgts; ++i) {
-         std::string targetName = dsi.GetTargetInfo(i).GetLabel().Data();
-         column_names.push_back(targetName);
-      }
+      // for (size_t i = 0; i < ntgts; ++i) {
+      //    std::string targetName = dsi.GetTargetInfo(i).GetLabel().Data();
+      //    column_names.push_back(targetName);
+      // }
 
-      for (size_t i = 0; i < nspec; ++i) {
-         std::string spectatorName = dsi.GetSpectatorInfo(i).GetLabel().Data();
-         column_names.push_back(spectatorName);
-      }
+      // for (size_t i = 0; i < nspec; ++i) {
+      //    std::string spectatorName = dsi.GetSpectatorInfo(i).GetLabel().Data();
+      //    column_names.push_back(spectatorName);
+      // }
 
       // TODO: Convert the lambda to a function generator taking an argument
       //    This way we can generate the function one and reuse it for all df's.
       //    Benchmarking with Instruments on mac suggests that speed is comparable to
       //    non-tdf _IF_ one excludes jitting. (800 tree vs 900 tdf both in millisecs).
-      // std::string _df = Form("((ROOT::Experimental::TDataFrame *)0x%lx)", ULong_t(df)); // NOTE! `df` is already a pointer!
-      // std::string _event_v = Form("((std::vector<TMVA::Event *> *)0x%lx)", ULong_t(&event_v));
-      // std::string _col_names = Form("((std::vector<std::string> *)0x%lx)", ULong_t(&column_names));
+      std::string _df = Form("((ROOT::Experimental::TDataFrame *)0x%lx)", ULong_t(df)); // NOTE! `df` is already a pointer!
+      std::string _event_v = Form("((std::vector<TMVA::Event *> *)0x%lx)", ULong_t(&event_v));
+      std::string _col_names = Form("((std::vector<std::string> *)0x%lx)", ULong_t(&column_names));
 
-      // std::string cmd = _df + "->Foreach([](Float_t x1, Float_t x2) {\n"
-      //                   "  std::vector<TMVA::Event *> & evts = *" + _event_v + ";\n"
-      //                   "  evts.push_back(new TMVA::Event({x1, x2}, {}, {},"+std::to_string(iClass)+", "+std::to_string(weight)+"));\n"
-      //                   "}, *"+_col_names+")";
+      std::string cmd = _df + "->Foreach([](" + parameter_var.str() + ") {\n"
+                        "  std::vector<TMVA::Event *> & evts = *" + _event_v + ";\n"
+                        "  evts.push_back(new TMVA::Event("
+                        "  {" + list_var.str() + "},"
+                        "  {}, "
+                        "  {}, "
+                        + std::to_string(iClass)+", "
+                        + std::to_string(weight)+"));\n"
+                        "}, *"+_col_names+")";
 
-      // std::cout << "Executing: " << cmd << std::endl;
-      // gInterpreter->ProcessLine(cmd.c_str());
-      // std::cout << "Done Executing" << std::endl;
+      std::cout << "Executing: " << cmd << std::endl;
+      gInterpreter->ProcessLine(cmd.c_str());
+      std::cout << "Done Executing" << std::endl;
 
       // Test of the above, but without jitting.
       // Using instruments on mac this is of comparable speed as to the TTree version.
       // ~800 ms for both, more testing required.
-      df->Foreach([=, &event_v](Float_t x1, Float_t x2){
-         event_v.push_back(new TMVA::Event({x1, x2}, {}, {}, iClass, weight));
-      }, column_names);
+      // df->Foreach([=, &event_v](Float_t x1, Float_t x2){
+      //    event_v.push_back(new TMVA::Event({x1, x2}, {}, {}, iClass, weight));
+      // }, column_names);
 
    }
 }
