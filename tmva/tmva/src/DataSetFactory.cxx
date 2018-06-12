@@ -1034,77 +1034,50 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
       // TODO: Support more than 1 dataframe per class
       auto df = dataInput.fInputDataFrames[className][0];
 
-      // NOTE: Between begin and end is a simple but slow implementation
-      //    Even further down is a more complex but hopefully more performant impl.
-      // === BEGIN ===
-      // TODO: `dataInput.GetEntries()` might not behave as I expect.
-      // for (size_t iEvent = 0; iEvent < *(df->Count()); ++iEvent) {
+      auto getColumnNames = [](DataSetInfo & dsi, size_t nvars, size_t ntgts, size_t nspec) {
+         std::vector<std::string> column_names{};
 
-      //    // std::cout << "Processing event: " << iEvent << std::endl;
-
-      //    // TODO: There are better implementations of this.
-      //    //    This e.g. does not correctly handle this case:
-      //    //    ```
-      //    //    ROOT::Experimental::TDataFrame d(10);
-      //    //    int i(0);
-      //    //    auto df = d.Define("b", [&i](){return i;});
-      //    //    df.Range(0, 1).Take<int>("b"); // output is 0
-      //    //    df.Range(0, 1).Take<int>("b"); // output is 1
-      //    //    ```
-      //    for (size_t i = 0; i < nvars; ++i) {
-      //       std::string variableName = dsi.GetVariableInfo(i).GetLabel().Data();
-      //       // std::cout << "Processing variable: " << variableName << std::endl;
-      //       auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(variableName);
-      //       auto value = (*wrapper)[0];
-      //       vars[i] = value;
-      //    }
-
-      //    for (size_t i = 0; i < ntgts; ++i) {
-      //       std::string targetName = dsi.GetTargetInfo(i).GetLabel().Data();
-      //       // std::cout << "Processing target: " << targetName << std::endl;
-      //       auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(targetName);
-      //       auto value = (*wrapper)[0];
-      //       tgts[i] = value;
-      //    }
-
-      //    for (size_t i = 0; i < nspec; ++i) {
-      //       std::string spectatorName = dsi.GetSpectatorInfo(i).GetLabel().Data();
-      //       // std::cout << "Processing spectator: " << spectatorName << std::endl;
-      //       auto wrapper = df->Range(iEvent, iEvent+1).Take<Float_t>(spectatorName);
-      //       auto value = (*wrapper)[0];
-      //       spec[i] = value;
-      //    }
-
-      //    event_v.push_back(new Event(vars, tgts, spec, iClass, weight));
-      // }
-      // === END ===
-
-      std::stringstream parameter_var{""};
-      std::stringstream list_var{""};
-      for (size_t i = 0; i < nvars; ++i) {
-         parameter_var << "Float_t var" << i;
-         list_var << "var" << i;
-         if (i != nvars - 1) {
-            parameter_var << ", ";
-            list_var << ", ";
+         for (size_t i = 0; i < nvars; ++i) {
+            std::string variableName = dsi.GetVariableInfo(i).GetLabel().Data();
+            column_names.push_back(variableName);
          }
-      }
+         for (size_t i = 0; i < ntgts; ++i) {
+            std::string targetName = dsi.GetTargetInfo(i).GetLabel().Data();
+            column_names.push_back(targetName);
+         }
+         for (size_t i = 0; i < nspec; ++i) {
+            std::string spectatorName = dsi.GetSpectatorInfo(i).GetLabel().Data();
+            column_names.push_back(spectatorName);
+         }
 
-      std::vector<std::string> column_names{};
-      for (size_t i = 0; i < nvars; ++i) {
-         std::string variableName = dsi.GetVariableInfo(i).GetLabel().Data();
-         column_names.push_back(variableName);
-      }
+         return column_names;
+      };
 
-      // for (size_t i = 0; i < ntgts; ++i) {
-      //    std::string targetName = dsi.GetTargetInfo(i).GetLabel().Data();
-      //    column_names.push_back(targetName);
-      // }
+      auto buildVariableList = [](size_t n, std::string baseName, bool withTypes){
+         std::stringstream list{};
+         for (size_t i = 0; i < n; ++i) {
+            if (withTypes) {
+               list << "Float_t "<< baseName << i;
+            } else {
+               list << baseName << i;
+            }
 
-      // for (size_t i = 0; i < nspec; ++i) {
-      //    std::string spectatorName = dsi.GetSpectatorInfo(i).GetLabel().Data();
-      //    column_names.push_back(spectatorName);
-      // }
+            if (i < n - 1) {
+               list << ", ";
+            }
+         }
+
+         return list.str();
+      };
+
+      std::vector<std::string> column_names = getColumnNames(dsi, nvars, ntgts, nspec);
+
+      std::string parameter_var = buildVariableList(nvars, "var", true);
+      std::string list_var = buildVariableList(nvars, "var", false);
+      std::string parameter_tgt = buildVariableList(ntgts, "tgt", true);
+      std::string list_tgt = buildVariableList(ntgts, "tgt", false);
+      std::string parameter_spec = buildVariableList(nspec, "spec", true);
+      std::string list_spec = buildVariableList(nspec, "spec", false);
 
       // TODO: Convert the lambda to a function generator taking an argument
       //    This way we can generate the function one and reuse it for all df's.
@@ -1114,15 +1087,17 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
       std::string _event_v = Form("((std::vector<TMVA::Event *> *)0x%lx)", ULong_t(&event_v));
       std::string _col_names = Form("((std::vector<std::string> *)0x%lx)", ULong_t(&column_names));
 
-      std::string cmd = _df + "->Foreach([](" + parameter_var.str() + ") {\n"
+      std::string cmd = _df + "->Foreach([](" + parameter_var + ((parameter_tgt.size() != 0) ? (", ") : (""))
+                                              + parameter_tgt + ((parameter_spec.size() != 0) ? (", ") : (""))
+                                              + parameter_spec + ") {\n"
                         "  std::vector<TMVA::Event *> & evts = *" + _event_v + ";\n"
                         "  evts.push_back(new TMVA::Event("
-                        "  {" + list_var.str() + "},"
-                        "  {}, "
-                        "  {}, "
-                        + std::to_string(iClass)+", "
-                        + std::to_string(weight)+"));\n"
-                        "}, *"+_col_names+")";
+                        "  {" + list_var + "},"
+                        "  {" + list_tgt + "}, "
+                        "  {" + list_spec + "}, "
+                        + std::to_string(iClass) + ", "
+                        + std::to_string(weight) + "));\n"
+                        "}, *" + _col_names + ")";
 
       std::cout << "Executing: " << cmd << std::endl;
       gInterpreter->ProcessLine(cmd.c_str());
