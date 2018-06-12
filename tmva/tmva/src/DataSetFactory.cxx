@@ -1032,7 +1032,8 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
       EventVector &event_v = eventsmap[currentTreeType].at(iClass);
 
       // TODO: Support more than 1 dataframe per class
-      auto df = dataInput.fInputDataFrames[className][0];
+      auto dfInfo = dataInput.fInputDataFrames[className][0];
+      auto df = dfInfo.GetDataFrame();
 
       auto getColumnNames = [](DataSetInfo & dsi, size_t nvars, size_t ntgts, size_t nspec) {
          std::vector<std::string> column_names{};
@@ -1086,6 +1087,7 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
       std::string _df = Form("((ROOT::Experimental::TDataFrame *)0x%lx)", ULong_t(df)); // NOTE! `df` is already a pointer!
       std::string _event_v = Form("((std::vector<TMVA::Event *> *)0x%lx)", ULong_t(&event_v));
       std::string _col_names = Form("((std::vector<std::string> *)0x%lx)", ULong_t(&column_names));
+      std::string _classCounts = Form("((EvtStatsPerClass *)0x%lx)", ULong_t(&classEventCounts));
 
       std::string cmd = _df + "->Foreach([](" + parameter_var + ((parameter_tgt.size() != 0) ? (", ") : (""))
                                               + parameter_tgt + ((parameter_spec.size() != 0) ? (", ") : (""))
@@ -1103,6 +1105,12 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
       gInterpreter->ProcessLine(cmd.c_str());
       std::cout << "Done Executing" << std::endl;
 
+      classEventCounts.nEvBeforeCut = event_v.size();
+      classEventCounts.nWeEvBeforeCut = 1.;
+      classEventCounts.nNegWeights = 1.;
+      classEventCounts.nEvAfterCut = event_v.size();
+      classEventCounts.nWeEvAfterCut = 1.;
+
       // Test of the above, but without jitting.
       // Using instruments on mac this is of comparable speed as to the TTree version.
       // ~800 ms for both, more testing required.
@@ -1110,7 +1118,13 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
       //    event_v.push_back(new TMVA::Event({x1, x2}, {}, {}, iClass, weight));
       // }, column_names);
 
+      std::cout << "EventVector: [";
+      for (auto && event : event_v) {
+         std::cout << event->GetValue(0) << ", ";
+      }
+      std::cout << "]" << std::endl;
    }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////

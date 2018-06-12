@@ -80,6 +80,34 @@ namespace TMVA {
        ClassDef(TreeInfo,1);      
    };
 
+   class DataFrameInfo {
+
+   public:
+
+      DataFrameInfo(TDataFrame * df, const TString & className,
+                    Double_t weight=1.0,
+                    Types::ETreeType tt=Types::kMaxTreeType)
+      : fDf(df), fClassName(className), fWeight(weight), fTreeType(tt) {}
+
+      DataFrameInfo()
+      : fDf(nullptr), fClassName(""), fWeight(1.), fTreeType(Types::kMaxTreeType) {}
+
+      ~DataFrameInfo() {}
+
+      TDataFrame *     GetDataFrame() const { return fDf; }
+      Double_t         GetWeight()    const { return fWeight; }
+      UInt_t           GetEntries()   const { return (fDf == nullptr) ? (0) : (*(fDf->Count())); }
+      Types::ETreeType GetTreeType()  const { return fTreeType; }
+      const TString&   GetClassName() const { return fClassName; }
+
+   private:
+
+      TDataFrame *     fDf;       // pointer to the the input
+      TString          fClassName;// name of the class the input belongs to
+      Double_t         fWeight;   // weight for the input
+      Types::ETreeType fTreeType; // input is for training/testing/both
+   };
+
    class DataInputHandler :public TObject {
 
    // TODO: Remove this.
@@ -139,7 +167,7 @@ namespace TMVA {
 
       TTree * ReadInputTree( const TString& dataFile );
       
-      mutable std::map< TString, std::vector<TDataFrame *> > fInputDataFrames; // 
+      mutable std::map< TString, std::vector<DataFrameInfo> > fInputDataFrames; // list of input dataframes per class
       mutable std::map< TString, std::vector<TreeInfo> > fInputTrees;        // list of input trees per class (classname is given as first parameter in the map)
       Types::EDataInputType                              fInputType;         // Data source type. Determines how to build event vector.
       std::map< std::string, Bool_t   >                  fExplicitTrainTest; // if set to true the user has specified training and testing data explicitly

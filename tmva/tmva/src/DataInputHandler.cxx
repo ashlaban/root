@@ -194,9 +194,12 @@ void TMVA::DataInputHandler::AddDataFrame(TDataFrame &df, const TString &classNa
             << " cannot be mixed." << Endl;
    }
 
+   // TODO: The dataframe should use `cut` as a filter at construction (`BuildEventVector`) or
+   //     it should be removed from the call signature.
+
    fInputType = Types::kDataFrame;
 
-   fInputDataFrames[className.Data()].push_back(&df);
+   fInputDataFrames[className.Data()].emplace_back(&df, className, weight, tt);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -231,6 +234,7 @@ std::vector< TString >* TMVA::DataInputHandler::GetClassList() const
       Log() << kFATAL << "Invalid state of DataInputHandler. Input must be"
             << " dataframe or ttree." << Endl;
    }
+   return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -253,8 +257,8 @@ UInt_t TMVA::DataInputHandler::GetEntries() const
       ULong64_t n = 0;
       // fInputDataFrames is map TString -> TDataFrame
       for (auto &&entry : fInputDataFrames) {
-         for (auto &&df : entry.second) {
-            n += *(df->Count());
+         for (auto &&dfInfo : entry.second) {
+            n += *(dfInfo.GetDataFrame()->Count());
          }
       }
       return (UInt_t)n;
@@ -268,4 +272,5 @@ UInt_t TMVA::DataInputHandler::GetEntries() const
       Log() << kFATAL << "Invalid state of DataInputHandler. Input must be"
             << " dataframe or ttree." << Endl;
    }
+   return 0;
 }
