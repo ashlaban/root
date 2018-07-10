@@ -49,6 +49,8 @@ Class that contains all the data information
 
 #include "TMVA/DataSetFactory.h"
 
+#include "ROOT/RDataFrame.hxx"
+
 #include "TEventList.h"
 #include "TFile.h"
 #include "TInterpreter.h"
@@ -991,7 +993,7 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
 {
    if (dataInput.GetInputType() != Types::kDataFrame) {
       Log() << kFATAL << "BuildEventVectorDataFrame can only handle"
-            << " DataInputHandler wrapping a TDataFrame." << Endl;
+            << " DataInputHandler wrapping a RDataFrame." << Endl;
    }
 
    // TODO: Support cut expressions. Then we can take the same df several times and 
@@ -1082,7 +1084,7 @@ void TMVA::DataSetFactory::BuildEventVectorDataFrame(TMVA::DataSetInfo &dsi, TMV
       //    This way we can generate the function one and reuse it for all df's.
       //    Benchmarking with Instruments on mac suggests that speed is comparable to
       //    non-tdf _IF_ one excludes jitting. (800 tree vs 900 tdf both in millisecs).
-      std::string _df = Form("((ROOT::Experimental::TDataFrame *)0x%lx)", ULong_t(df)); // NOTE! `df` is already a pointer!
+      std::string _df = Form("((ROOT::RDataFrame *)0x%lx)", ULong_t(df)); // NOTE! `df` is already a pointer!
       std::string _event_v = Form("((std::vector<TMVA::Event *> *)0x%lx)", ULong_t(&event_v));
       std::string _col_names = Form("((std::vector<std::string> *)0x%lx)", ULong_t(&column_names));
       std::string _classCounts = Form("((EvtStatsPerClass *)0x%lx)", ULong_t(&classEventCounts));

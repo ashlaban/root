@@ -104,7 +104,7 @@ ROOT_STANDARD_LIBRARY_PACKAGE(TMVA
                               HEADERS ${theaders1} ${theaders2} ${theaders3} ${theaders4} ${theaders5}
                               SOURCES *.cxx ${DNN_FILES} ${DNN_CPU_FILES} DICTIONARY_OPTIONS "-writeEmptyRootPCM"
                               LIBRARIES Core MathCore Matrix ${DNN_CUDA_LIBRARIES} ${DNN_CPU_LIBRARIES}
-                              DEPENDENCIES Core RIO Hist Tree TreePlayer MLP Minuit XMLIO
+                              DEPENDENCIES Core RIO Hist ROOTDataFrame Tree TreePlayer MLP Minuit XMLIO
                               INSTALL_OPTIONS ${installoptions})
 
 if(NOT gnuinstall)

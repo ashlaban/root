@@ -22,7 +22,7 @@
 /// \macro_code
 /// \author Kim Albertsson
 
-#include "ROOT/TDataFrame.hxx"
+#include "ROOT/RDataFrame.hxx"
 
 #include "TMVA/DataLoader.h"
 #include "TMVA/Factory.h"
@@ -80,8 +80,8 @@ void TMVAMinimalClassificationDataFrame()
    // Data generatration
    TTree * sigTree = genTree(1000, 0.0, 2.0, 100);
    TTree * bkgTree = genTree(1000, 0.0, 2.0, 101);
-   auto sigDF = ROOT::Experimental::TDataFrame(*sigTree, {"x", "y"});
-   auto bkgDF = ROOT::Experimental::TDataFrame(*bkgTree, {"x", "y"});
+   auto sigDF = ROOT::RDataFrame(*sigTree, {"x", "y"});
+   auto bkgDF = ROOT::RDataFrame(*bkgTree, {"x", "y"});
 
    TString factoryOptions = "AnalysisType=Classification";
    TMVA::Factory factory{"", outFile, factoryOptions};

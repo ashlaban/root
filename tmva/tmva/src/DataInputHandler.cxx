@@ -88,7 +88,7 @@ void TMVA::DataInputHandler::AddTree( TTree* tree,
                                       Types::ETreeType tt )
 {
    if (fInputType != Types::kTTree and fInputType != Types::kMaxDataInput) {
-      Log() << kFATAL << "Currently TDataFrame inputs and TTree/CSV inputs"
+      Log() << kFATAL << "Currently RDataFrame inputs and TTree/CSV inputs"
             << " cannot be mixed." << Endl;
    }
 
@@ -186,11 +186,11 @@ void TMVA::DataInputHandler::AddInputTrees(TTree* inputTree, const TCut& SigCut,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void TMVA::DataInputHandler::AddDataFrame(TDataFrame &df, const TString &className, Double_t weight, const TCut &cut,
+void TMVA::DataInputHandler::AddDataFrame(ROOT::RDataFrame &df, const TString &className, Double_t weight, const TCut &cut,
                                           Types::ETreeType tt)
 {
    if (fInputType != Types::kDataFrame and fInputType != Types::kMaxDataInput) {
-      Log() << kFATAL << "Currently TDataFrame inputs and TTree/CSV inputs"
+      Log() << kFATAL << "Currently RDataFrame inputs and TTree/CSV inputs"
             << " cannot be mixed." << Endl;
    }
 
@@ -251,17 +251,18 @@ UInt_t TMVA::DataInputHandler::GetEntries(const std::vector<TreeInfo>& tiV) cons
 ////////////////////////////////////////////////////////////////////////////////
 /// return number of entries in tree
 
-UInt_t TMVA::DataInputHandler::GetEntries() const
+UInt_t TMVA::DataInputHandler::GetEntries()
 {
    if (fInputType == Types::kDataFrame) {
       ULong64_t n = 0;
-      // fInputDataFrames is map TString -> TDataFrame
+      // fInputDataFrames is map TString -> RDataFrame
       for (auto &&entry : fInputDataFrames) {
          for (auto &&dfInfo : entry.second) {
-            n += *(dfInfo.GetDataFrame()->Count());
+            // n += *(dfInfo.GetDataFrame()->Count());
+            n += dfInfo.GetEntries();
          }
       }
-      return (UInt_t)n;
+      return static_cast<UInt_t>(n);
    } else if (fInputType == Types::kTTree) {
       UInt_t number = 0;
       for (std::map<TString, std::vector<TreeInfo>>::iterator it = fInputTrees.begin(); it != fInputTrees.end(); ++it) {

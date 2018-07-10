@@ -334,7 +334,7 @@ void TMVA::DataLoader::SetInputTreesFromEventAssignTrees()
    }
 }
 
-void TMVA::DataLoader::AddDataFrame(TDataFrame &df, const TString &className, Double_t weight, const TCut &cut,
+void TMVA::DataLoader::AddDataFrame(ROOT::RDataFrame &df, const TString &className, Double_t weight, const TCut &cut,
                                     Types::ETreeType tt)
 {
    DataInput().AddDataFrame(df, className, weight, cut, tt);

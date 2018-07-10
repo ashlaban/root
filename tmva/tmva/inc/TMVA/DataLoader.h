@@ -33,7 +33,7 @@
 #include <vector>
 #include <map>
 
-#include "ROOT/TDataFrame.hxx"
+#include "ROOT/RDataFrame.hxx"
 
 #include "TCut.h"
 
@@ -45,8 +45,6 @@ class TFile;
 class TTree;
 class TDirectory;
 class TH2;
-
-using namespace ROOT::Experimental;
 
 namespace TMVA {
 
@@ -130,7 +128,7 @@ namespace TMVA {
                     Types::ETreeType tt = Types::kMaxTreeType );
       void AddTree( TTree* tree, const TString& className, Double_t weight, const TCut& cut, const TString& treeType );
 
-      void AddDataFrame(TDataFrame &df, const TString &className, Double_t weight = 1.0, const TCut &cut = "",
+      void AddDataFrame(ROOT::RDataFrame &df, const TString &className, Double_t weight = 1.0, const TCut &cut = "",
                         Types::ETreeType tt = Types::kMaxTreeType);
 
       // set input variable

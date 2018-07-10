@@ -41,14 +41,12 @@
 #include <string>
 #include <fstream>
 
-#include "ROOT/TDataFrame.hxx"
+#include "ROOT/RDataFrame.hxx"
 
 #include "TTree.h"
 #include "TCut.h"
 
 #include "TMVA/Types.h"
-
-using namespace ROOT::Experimental;
 
 namespace TMVA {
 
@@ -84,7 +82,7 @@ namespace TMVA {
 
    public:
 
-      DataFrameInfo(TDataFrame * df, const TString & className,
+      DataFrameInfo(ROOT::RDataFrame * df, const TString & className,
                     Double_t weight=1.0,
                     Types::ETreeType tt=Types::kMaxTreeType)
       : fDf(df), fClassName(className), fWeight(weight), fTreeType(tt) {}
@@ -94,15 +92,15 @@ namespace TMVA {
 
       ~DataFrameInfo() {}
 
-      TDataFrame *     GetDataFrame() const { return fDf; }
+      ROOT::RDataFrame *     GetDataFrame() { return fDf; }
       Double_t         GetWeight()    const { return fWeight; }
-      UInt_t           GetEntries()   const { return (fDf == nullptr) ? (0) : (*(fDf->Count())); }
+      UInt_t           GetEntries()   { return (fDf == nullptr) ? (0) : (*(fDf->Count())); }
       Types::ETreeType GetTreeType()  const { return fTreeType; }
       const TString&   GetClassName() const { return fClassName; }
 
    private:
 
-      TDataFrame *     fDf;       // pointer to the the input
+      ROOT::RDataFrame *     fDf;       // pointer to the the input
       TString          fClassName;// name of the class the input belongs to
       Double_t         fWeight;   // weight for the input
       Types::ETreeType fTreeType; // input is for training/testing/both
@@ -130,7 +128,7 @@ namespace TMVA {
       void     AddTree          ( const TString& tr, const TString& className, Double_t weight=1.0, 
                                   const TCut& cut = "", Types::ETreeType tt = Types::kMaxTreeType );
 
-      void AddDataFrame(TDataFrame &df, const TString &className, Double_t weight = 1.0, const TCut &cut = "",
+      void AddDataFrame(ROOT::RDataFrame &df, const TString &className, Double_t weight = 1.0, const TCut &cut = "",
                         Types::ETreeType tt = Types::kMaxTreeType);
 
       // accessors
@@ -143,7 +141,7 @@ namespace TMVA {
       UInt_t           GetNBackgroundTrees()       const { return fInputTrees["Background"].size(); }
       UInt_t           GetSignalEntries()          const { return GetEntries(fInputTrees["Signal"]); }
       UInt_t           GetBackgroundEntries()      const { return GetEntries(fInputTrees["Background"]); }
-      UInt_t           GetEntries()                const;
+      UInt_t           GetEntries()                ;
       const TreeInfo&  SignalTreeInfo(Int_t i)     const { return fInputTrees["Signal"][i]; }
       const TreeInfo&  BackgroundTreeInfo(Int_t i) const { return fInputTrees["Background"][i]; }
 

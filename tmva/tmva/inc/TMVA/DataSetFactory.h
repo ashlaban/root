@@ -40,8 +40,6 @@
 #include <vector>
 #include <stdlib.h>
 
-#include "ROOT/TDataFrame.hxx"
-
 #include "TString.h"
 #include "TTree.h"
 #include "TCut.h"
@@ -53,8 +51,6 @@
 #include "TMVA/Types.h"
 #include "TMVA/VariableInfo.h"
 #include "TMVA/Event.h"
-
-using namespace ROOT::Experimental;
 
 namespace TMVA {
 
